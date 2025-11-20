@@ -1,0 +1,55 @@
+<div id="test"></div>
+
+<script>
+let recognition = new webkitSpeechRecognition();
+recognition.continuous = true;
+recognition.interimResults = true;
+recognition.lang = "en-US";
+
+let lastSpeechTime = Date.now();
+let fullTranscript = "";
+const SILENCE_LIMIT = 5000; // 5 seconds
+
+// Helper to append text to element
+function appendToTest(text) {
+  const el = document.getElementById("test");
+  if (el) {
+    el.innerText += text + "\n";
+  }
+}
+
+recognition.onresult = function(event) {
+  lastSpeechTime = Date.now(); // Update silence timer
+
+  for (let i = event.resultIndex; i < event.results.length; i++) {
+    let result = event.results[i];
+
+    if (result.isFinal) {
+      let text = result[0].transcript;
+      fullTranscript += text + " ";
+      appendToTest("Final: " + text);
+    }
+  }
+};
+
+recognition.onend = function() {
+  const now = Date.now();
+  const silence = now - lastSpeechTime;
+
+  if (silence < SILENCE_LIMIT) {
+    appendToTest("Restarting recognition...");
+    recognition.start();
+  } else {
+    appendToTest("=== FINAL AFTER TIMEOUT ===");
+    appendToTest(fullTranscript.trim());
+    appendToTest("===========================");
+  }
+};
+
+recognition.onstart = function() {
+  appendToTest("Listening...");
+};
+
+// Start listening
+recognition.start();
+</script>
